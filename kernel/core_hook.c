@@ -33,6 +33,10 @@
 #include <linux/vmalloc.h>
 #endif
 
+#ifndef get_cred_rcu
+#define get_cred_rcu get_current_cred
+#endif
+
 #include "allowlist.h"
 #include "arch.h"
 #include "core_hook.h"
@@ -136,12 +140,9 @@ void escape_to_root(void)
 {
 	struct cred *cred;
 
-	rcu_read_lock();
-
-	do {
-		cred = (struct cred *)__task_cred((current));
-		BUG_ON(!cred);
-	} while (!get_cred_rcu(cred));
+rcu_read_lock();
+cred = get_current_cred();
+BUG_ON(!cred);
 
 	if (cred->euid.val == 0) {
 		pr_warn("Already root, don't escape!\n");
